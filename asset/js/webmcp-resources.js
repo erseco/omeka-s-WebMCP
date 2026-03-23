@@ -20,7 +20,14 @@
         return;
     }
 
-    const _proxyUrl = (window.WebMCPConfig && window.WebMCPConfig.proxy_url) || '/admin/webmcp/proxy';
+    const _proxyUrl = (window.WebMCPConfig && window.WebMCPConfig.proxy_url) || (function () {
+        // Fallback: derive admin base from current location to support subdirectory deployments.
+        try {
+            var idx = window.location.pathname.indexOf('/admin/');
+            if (idx !== -1) return window.location.pathname.substring(0, idx) + '/admin/webmcp/proxy';
+        } catch (e) {}
+        return '/admin/webmcp/proxy';
+    }());
 
     /**
      * Retrieve the CSRF token injected by PHP into window.WebMCPConfig.
