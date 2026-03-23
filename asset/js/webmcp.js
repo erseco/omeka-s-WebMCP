@@ -33,7 +33,14 @@
     const groupUsers       = config.users        === true;
     const groupVocabs      = config.vocabularies === true;
     const groupBulk        = config.bulk         === true;
-    const _proxyUrl        = config.proxy_url    || '/admin/webmcp/proxy';
+    const _proxyUrl        = config.proxy_url    || (function () {
+        // Fallback: derive admin base from current location to support subdirectory deployments.
+        try {
+            var idx = window.location.pathname.indexOf('/admin/');
+            if (idx !== -1) return window.location.pathname.substring(0, idx) + '/admin/webmcp/proxy';
+        } catch (e) {}
+        return '/admin/webmcp/proxy';
+    }());
 
     /**
      * Retrieve the CSRF token injected by PHP into window.WebMCPConfig.
@@ -498,7 +505,14 @@
             execute: async (input) => {
                 try {
                     // Navigate to the item edit page so the user can upload via the form.
-                    window.location.href = `/admin/item/${input.item_id}/edit#media`;
+                    // Derive the admin base from _proxyUrl to support subdirectory deployments.
+                    var adminBase = '/admin';
+                    try {
+                        var proxyPath = new URL(_proxyUrl, window.location.href).pathname;
+                        var adminIdx = proxyPath.indexOf('/admin/');
+                        if (adminIdx !== -1) adminBase = proxyPath.substring(0, adminIdx + '/admin'.length);
+                    } catch (e) {}
+                    window.location.href = adminBase + '/item/' + input.item_id + '/edit#media';
                     return { success: true, message: `Navigated to item #${input.item_id} edit page for media upload.` };
                 } catch (err) {
                     return errorResult(err);
